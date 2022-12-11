@@ -17,7 +17,7 @@ export class ItemsResolver {
 
   @Query(() => [Item], { name: 'items' })
   async findAll(): Promise<Item[]> {
-    return await this.itemsService.findAll();
+    return this.itemsService.findAll();
   }
 
   @Query(() => Item, { name: 'item' })

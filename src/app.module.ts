@@ -8,6 +8,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 import { ItemsModule } from './items/items.module';
 import { CommonModule } from './common/common.module';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { CommonModule } from './common/common.module';
     MongooseModule.forRoot(process.env.MONGO_DB_CNN),
     ItemsModule,
     CommonModule,
+    UsersModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [],
