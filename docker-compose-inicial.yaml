@@ -1,0 +1,46 @@
+version: '3'
+
+name: anylist_app
+services:
+  db:
+    container_name: ${DB_NAME}
+    image: mongo:jammy
+    restart: always
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+      MONGO_INITDB_DATABASE: ${DB_NAME}
+    volumes:
+      - ./db_data/:/data/db
+      - ./db_data/file.key:/data/file.key
+
+    healthcheck:
+      test: test $$(echo "rs.initiate().ok || rs.status().ok" | mongo -u mongo -p mongo --quiet) -eq 1
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    command:
+      [
+        '--replSet',
+        'dbrs',
+        '--bind_ip_all',
+        '--auth',
+        '--keyFile',
+        '/data/file.key',
+      ]
+
+  db_admin:
+    container_name: anylist_db_admin
+    image: mongo-express:1.0.0-alpha.4
+    depends_on:
+      - db
+    restart: always
+    ports:
+      - '8081:8081'
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${DB_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${DB_PASSWORD}
+      ME_CONFIG_MONGODB_SERVER: ${DB_NAME}

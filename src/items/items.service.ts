@@ -4,44 +4,74 @@ import { Model } from 'mongoose';
 
 import { CreateItemInput, UpdateItemInput } from './dto/inputs';
 import { Item } from './schemas/item.schema';
+import { User } from 'src/users/schemas/user.schema';
 
 @Injectable()
 export class ItemsService {
-  constructor(@InjectModel(Item.name) private itemModel: Model<Item>) {}
+  constructor(
+    @InjectModel(Item.name) private readonly itemModel: Model<Item>,
+    @InjectModel(User.name) private readonly userModel: Model<User>,
+  ) {}
 
-  async create(createItemInput: CreateItemInput): Promise<Item> {
-    const newItem = await this.itemModel.create(createItemInput);
-    return newItem;
+  async create(createItemInput: CreateItemInput, user: User): Promise<Item> {
+    const session = await this.itemModel.db.startSession();
+    session.startTransaction();
+
+    try {
+      const newItem = new this.itemModel({
+        ...createItemInput,
+        user: user.id,
+      });
+
+      await newItem.save({ session });
+      user.items.push(newItem);
+
+      const { id, ...rest } = user;
+
+      await this.userModel.findByIdAndUpdate(id, rest);
+
+      await session.commitTransaction();
+      session.endSession();
+      return newItem.populate('user');
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
+    }
   }
 
-  async findAll(): Promise<Item[]> {
-    // todo: filtrar, paginar, por usuario...
-    return await this.itemModel.find();
+  async findAll(user: User): Promise<Item[]> {
+    return await this.itemModel.find({ user: user.id }).populate('user');
   }
 
-  async findOne(id: string): Promise<Item> {
-    const item = await this.itemModel.findById(id);
+  async findOne(id: string, user: User): Promise<Item> {
+    const item = await this.itemModel
+      .findOne({ _id: id, user: user.id })
+      .populate('user');
 
     if (!item) this.notFoundException(id);
 
     return item;
   }
 
-  async update(updateItemInput: UpdateItemInput): Promise<Item> {
+  async update(updateItemInput: UpdateItemInput, user: User): Promise<Item> {
     const { id, ...rest } = updateItemInput;
 
-    const item = await this.itemModel.findByIdAndUpdate(id, rest, {
-      new: true,
-    });
+    const item = await this.itemModel
+      .findOneAndUpdate({ _id: id, user: user.id }, rest, {
+        new: true,
+      })
+      .populate('user');
 
     if (!item) this.notFoundException(id);
 
     return item;
   }
 
-  async remove(id: string): Promise<Item> {
-    // todo: soft delete, integridad referencial
-    const item = await this.itemModel.findByIdAndRemove(id);
+  async remove(id: string, user: User): Promise<Item> {
+    const item = await this.itemModel
+      .findOneAndRemove({ _id: id, user: user.id })
+      .populate('user');
 
     if (!item) this.notFoundException(id);
 
