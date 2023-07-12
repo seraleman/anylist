@@ -35,8 +35,9 @@ import { UsersModule } from './users/users.module';
       }),
     }),
 
+    // `mongodb://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@localhost:27017/anylist_db?authSource=admin`,
     MongooseModule.forRoot(
-      `mongodb://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@localhost:27017/anylist_db?authSource=admin`,
+      `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/anylist_db?authSource=admin&replicaSet=dbrs`,
     ),
     ItemsModule,
     UsersModule,

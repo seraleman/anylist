@@ -1,0 +1,9 @@
+rs.status()
+cls
+clr
+clear
+mongosh -u user -p MySecretPassword --authenticationDatabase admin
+MongoServerError: command replSetGetStatus requires authentication
+mongosh -u user -p dbrs [direct: primary] test> rs.status()
+rs.status()atus()
+rs.status()

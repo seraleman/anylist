@@ -1,6 +1,7 @@
 # environments variables
 .env
 replica.key
+db_data
 
 # data
 /db_data

@@ -1,5 +1,6 @@
 version: '3.8'
 
+name: anylist_app
 services:
   mongod1:
     container_name: mongod1
@@ -7,16 +8,21 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${DB_NAME}
+      MONGODB_ADVERTISED_HOSTNAME: mongod1
     ports:
       - ${MONGODB_PORT}:27017
     volumes:
       - ./volumes/mongodb/data1:/data/db
       - ./keys/mongo/replica.key:/data/replica.key
-    depends_on:
-      - mongod2
-      - mongod3
+    # depends_on:
+    #   - mongod2
+    #   - mongod3
     restart: always
-    command: 'mongod --bind_ip_all --replSet dbrs --keyFile /data/replica.key'
+    command: >
+      bash -c "
+      chmod 400 /data/replica.key &&
+      mongod --bind_ip_all --replSet "dbrs" --keyFile /data/replica.key"
 
   mongod2:
     container_name: mongod2
@@ -27,7 +33,10 @@ services:
       - ./volumes/mongodb/data2:/data/db
       - ./keys/mongo/replica.key:/data/replica.key
     restart: always
-    command: 'mongod --bind_ip_all --replSet dbrs --keyFile /data/replica.key'
+    command: >
+      bash -c "
+      chmod 400 /data/replica.key &&
+      mongod --bind_ip_all --replSet "dbrs" --keyFile /data/replica.key"
 
   mongod3:
     container_name: mongod3
@@ -38,7 +47,10 @@ services:
       - ./volumes/mongodb/data3:/data/db
       - ./keys/mongo/replica.key:/data/replica.key
     restart: always
-    command: 'mongod --bind_ip_all --replSet dbrs --keyFile /data/replica.key'
+    command: >
+      bash -c "
+      chmod 400 /data/replica.key &&
+      mongod --bind_ip_all --replSet "dbrs" --keyFile /data/replica.key"
 
   mongo-setup:
     image: mongo:6.0
@@ -64,6 +76,7 @@ services:
     environment:
       ME_CONFIG_BASICAUTH_USERNAME: ${MONGOEXP_USERNAME}
       ME_CONFIG_BASICAUTH_PASSWORD: ${MONGOEXP_PASSWORD}
-      ME_CONFIG_MONGODB_URL: 'mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongod1:27017/?replicaSet=dbrs'
+      # ME_CONFIG_MONGODB_URL: 'mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongod1:27017/?replicaSet=dbrs'
+      ME_CONFIG_MONGODB_URL: 'mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongod1:27017,mongod2:27017,mongod3:27017/?replicaSet=dbrs'
     depends_on:
       - mongod1
